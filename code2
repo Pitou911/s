@@ -1,0 +1,49 @@
+// MainActivity.java
+package com.example.myapplication;
+
+import android.os.Bundle;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+import android.widget.EditText;
+import android.widget.TextView;
+import androidx.appcompat.app.AppCompatActivity;
+import java.util.Random;
+
+public class MainActivity extends AppCompatActivity implements SensorEventListener {
+    private TextView diceResult;
+    private EditText sidesInput;
+    private Random random = new Random();
+    private SensorManager sensorManager;
+    private long lastUpdate;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        diceResult = findViewById(R.id.dice_result);
+        sidesInput = findViewById(R.id.sides_input);
+        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
+                SensorManager.SENSOR_DELAY_NORMAL);
+        lastUpdate = System.currentTimeMillis();
+    }
+
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER &&
+                (System.currentTimeMillis() - lastUpdate) > 100) {
+            float speed = Math.abs(event.values[0] + event.values[1] + event.values[2]);
+            if (speed > 15) {
+                lastUpdate = System.currentTimeMillis();
+                int sides = Math.max(2, Integer.parseInt(sidesInput.getText().toString().trim().isEmpty() ?
+                        "6" : sidesInput.getText().toString()));
+                diceResult.setText("Rolled: " + (random.nextInt(sides) + 1) + " (d" + sides + ")");
+            }
+        }
+    }
+
+    @Override public void onAccuracyChanged(Sensor sensor, int accuracy) {}
+    @Override protected void onPause() { super.onPause(); sensorManager.unregisterListener(this); }
+}
